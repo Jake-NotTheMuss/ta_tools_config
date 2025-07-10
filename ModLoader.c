@@ -15,7 +15,7 @@
 #endif
 
 #define CSV_FILE_MUST_EXIST 0
-#define VERBOSE_INFO 0
+#define VERBOSE_INFO 1
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -133,38 +133,53 @@ static void in_error (const ParseInfo *pi, const char *fmt, ...) {
   exit(EXIT_FAILURE);
 }
 
+static void strip_space (char **start, char **end) {
+  while (isspace(**start))
+    (*start)++;
+  while (isspace((*end)[-1]))
+    (*end)--;
+}
+
+static int checkmatch (ParseInfo *pi, char *start, char *end) {
+  int c, matched;
+  strip_space(&start, &end);
+  c = *end;
+  *end = 0;
+  printinfo("line %d: '%s' provided", pi->line, start);
+  /* "*" matches with any progname */
+  matched = streq(start, "*") || streq(start, pi->progname);
+  if (matched)
+    printinfo("line %d: found matching argument: '%s'", pi->line, start);
+  *end = c;
+  return matched;
+}
+
 static void loadconfigline (ParseInfo *pi, const char *line) {
+  int ll;  /* line length */
   char buf [1024];
-  int matched = 0;
   /* format: '<program>|<program>|...,<DLL TO LOAD>' */
   char *nextcol, *q, *p = strchr(line, ',');
   if (p == NULL) return;
   printinfo("");
   printinfo("line %d: '%s'", pi->line, line);
   nextcol = p + 1;
-  strncpy(buf, line, p - line);
+  ll = p - line;
+  strncpy(buf, line, ll);
   /* get program names delimited by '|' to see if they match PROGNAME */
-  for (p = buf; (q = strchr(p, '|')) != NULL; p = q + 1) {
-    *q = 0;
-    printinfo("line %d: '%s' provided", pi->line, p);
-    /* "*" matches with any progname */
-    matched = streq(p, "*") || streq(p, pi->progname);
-    if (matched)
-      printinfo("line %d: found matching argument: '%s'", pi->line, p);
-    *q = '|';
-    if (matched) goto match;
-  }
-  printinfo("line %d: '%s' provided", pi->line, p);
+  for (p = buf; (q = strchr(p, '|')) != NULL; p = q + 1)
+    if (checkmatch(pi, p, q)) goto match;
   /* check final progname in column 0 */
-  if (!streq(p, "*") && !streq(p, pi->progname))
+  if (!checkmatch(pi, buf, buf + ll))
     return;
-  printinfo("line %d: found matching argument: '%s'", pi->line, p);
   match:
   /* matched progname: get the DLL in the next CSV column */
   p = strchr(nextcol, ',');
   p = p ? strncpy(buf, nextcol, p - nextcol) : nextcol;
+  q = p + strlen(p);
   if (nlibs + 1 >= MAX_LIBS)
     in_error(pi, "too many libraries to load (exceeds %d)", MAX_LIBS);
+  strip_space(&p, &q);
+  *q = 0;
   libs[nlibs] = strdup(p);
   if (libs[nlibs] == NULL)
     c_error("strdup failed");
