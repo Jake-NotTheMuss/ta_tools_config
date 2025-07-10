@@ -1,0 +1,27 @@
+README for ta_tools_config
+
+This will allow you install TA Tools mods (linker, ape, radiant, etc.)
+in a modular way. The file 'ta_tools_config.csv' is a configuration
+file which specifies which DLL files to load for which tools.
+
+'RemoteLogger.dll' is modified to contain the machinery that
+processes this configuration file.
+
+Run 'make' and 'make install'.
+
+'ta_tools_config.csv' should either be in the working directory that is
+invoking the tool, or in '${TA_TOOLS_PATH}/bin' (it is searched in that
+order).
+
+Installing new tools mods should be more convenient with this. You just
+have to copy the mod DLL to '${TA_TOOLS_PATH}/bin', and then add a line
+to 'ta_tools_config.csv':
+
+<tool name>,<dll name>
+
+For example:
+
+linker,linker_lua.dll
+
+Causes '${TA_TOOLS_PATH}/bin/linker_lua.dll' to be loaded every time
+'linker_modtools.exe' runs.
