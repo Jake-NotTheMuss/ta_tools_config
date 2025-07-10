@@ -11,7 +11,6 @@
 #include <windows.h>
 
 #include "RemoteLogger.h"
-#include "ModLoader.h"
 
 extern void ModLoader_Load (const char *progname);
 
