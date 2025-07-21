@@ -15,7 +15,7 @@
 #endif
 
 #define CSV_FILE_MUST_EXIST 0
-#define VERBOSE_INFO 1
+#define VERBOSE_INFO 0
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
